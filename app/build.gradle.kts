@@ -5,22 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.forocineast" // 👈 TU NUEVO PAQUETE
+    namespace = "com.example.forocineast"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.forocineast"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    defaultConfig {
-        applicationId = "com.example.forocineast"
-        minSdk = 24
-        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -46,6 +37,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -62,25 +57,17 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // Window size classes
-    implementation("androidx.compose.material3:material3-window-size-class")
-
     // Lifecycle / Activity
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
 
-
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-
+    // Red e Imagenes
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-
-    // Imágenes
     implementation("io.coil-kt:coil-compose:2.4.0")
-
-
 
     implementation("androidx.compose.foundation:foundation")
 
@@ -88,15 +75,16 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Tests
+    // --- TESTING UNITARIO ---
     testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+
+    // --- TESTING INSTRUMENTAL (UI) ---
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-
-    //Extra testing
-    testImplementation("junit:junit:4.13.2")//El estándar de pruebas
-    testImplementation("io.mockk:mockk:1.13.8")//Para simular el servidor (Mocking)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")//Para probar corrutinas (suspend)
-    testImplementation("androidx.arch.core:core-testing:2.2.0")//Para probar LiveData/StateFlow
+    // Mockk para Android (Instrumental)
+    androidTestImplementation("io.mockk:mockk-android:1.13.8")
 }

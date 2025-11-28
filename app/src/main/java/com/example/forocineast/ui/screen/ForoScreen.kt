@@ -1,5 +1,6 @@
 package com.example.forocineast.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,14 +28,24 @@ fun ForoScreen(
     authViewModel: AuthViewModel
 ) {
     val foroViewModel: ForoViewModel = viewModel()
+    val context = LocalContext.current
 
     val posts by foroViewModel.posts.collectAsState()
     val isLoading by foroViewModel.isLoading.collectAsState()
+    val mensajeError by foroViewModel.mensajeError.collectAsState()
 
     // Obtenemos si el usuario actual es Admin
     val usuarioActual = authViewModel.usuarioActual
     val esAdmin = usuarioActual?.isAdmin() == true
     val usuarioId = usuarioActual?.id ?: -1
+
+    // Efecto para mostrar errores (Toast)
+    LaunchedEffect(mensajeError) {
+        mensajeError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            foroViewModel.limpiarError() // Limpiamos el error para no repetirlo
+        }
+    }
 
     var mostrarDialogo by remember { mutableStateOf(false) }
 
@@ -93,7 +105,7 @@ fun ForoScreen(
 fun PostItem(
     post: Post, 
     usuarioActualId: Int, 
-    esAdmin: Boolean, // Nuevo parámetro
+    esAdmin: Boolean, 
     onDelete: () -> Unit
 ) {
     var mostrarSpoiler by remember { mutableStateOf(!post.esSpoiler()) }
@@ -156,7 +168,6 @@ fun PostItem(
                     onClick = onDelete,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    // Diferenciamos visualmente si borramos como admin
                     val textoBoton = if (post.autorId == usuarioActualId) "Eliminar" else "Eliminar (Admin)"
                     Text(textoBoton, color = MaterialTheme.colorScheme.error)
                     Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)

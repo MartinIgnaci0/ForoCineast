@@ -3,7 +3,6 @@ package com.example.forocineast.viewmodel
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import android.util.Patterns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.forocineast.model.AuthUiState
@@ -14,26 +13,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Cambiamos a AndroidViewModel para tener acceso al Contexto (necesario para SharedPreferences)
+// Refactorizado para aceptar repositorio en el constructor (Testable)
 class AuthViewModel(
-    application: Application
+    application: Application,
+    private val repository: UsuarioRepository
 ) : AndroidViewModel(application) {
 
-    private val repository = UsuarioRepository()
+    // Constructor secundario para uso normal en la App (Inyección de dependencias simple)
+    constructor(application: Application) : this(application, UsuarioRepository())
+
     private val context = application.applicationContext
-    
-    // Preferencias para guardar datos locales simples
     private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
-    // Estado del formulario
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    // Usuario actual
     var usuarioActual: Usuario? = null
         private set
 
-    // --- Lógica de Login ---
     fun login(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(estaCargando = true, errorGeneral = null) }
@@ -41,13 +38,9 @@ class AuthViewModel(
                 val correo = _uiState.value.correo
                 val clave = _uiState.value.clave
 
-                // 1. Login en el servidor
                 val usuarioRecibido = repository.login(correo, clave)
 
-                // 2. Recuperar foto guardada localmente si existe
                 val fotoGuardada = prefs.getString("foto_perfil_${usuarioRecibido.id}", null)
-                
-                // Si hay foto local, la usamos. Si no, usamos la que venga del servidor (si hubiera)
                 val usuarioConFoto = if (fotoGuardada != null) {
                     usuarioRecibido.copy(fotoPerfilUrl = fotoGuardada)
                 } else {
@@ -69,28 +62,19 @@ class AuthViewModel(
         }
     }
 
-    // --- Actualizar foto de perfil (Persistente) ---
     fun actualizarFotoPerfil(uri: Uri) {
         val idUsuario = usuarioActual?.id ?: return
         val rutaFoto = uri.toString()
-
-        // 1. Actualizar en memoria (para que se vea ya)
         usuarioActual = usuarioActual?.copy(fotoPerfilUrl = rutaFoto)
-
-        // 2. Guardar en disco (SharedPreferences) para el futuro
         prefs.edit().putString("foto_perfil_$idUsuario", rutaFoto).apply()
-        
-        // Forzamos recomposición si es necesario (aunque usuarioActual no es flow, la pantalla lo relee)
     }
 
-    // --- Actualizadores de campos ---
     fun onNombreChange(texto: String) = _uiState.update { it.copy(nombre = texto, errorNombre = null) }
     fun onAliasChange(texto: String) = _uiState.update { it.copy(alias = texto, errorAlias = null) }
     fun onCorreoChange(texto: String) = _uiState.update { it.copy(correo = texto, errorCorreo = null) }
     fun onClaveChange(texto: String) = _uiState.update { it.copy(clave = texto, errorClave = null) }
     fun onConfirmarClaveChange(texto: String) = _uiState.update { it.copy(confirmarClave = texto) }
 
-    // --- Lógica de Registro ---
     fun registrar(onSuccess: () -> Unit) {
         if (!validarRegistro()) return
 
@@ -112,7 +96,8 @@ class AuthViewModel(
         }
     }
 
-    private fun validarRegistro(): Boolean {
+    // Hacemos pública la función para testearla
+    fun validarRegistro(): Boolean {
         val s = _uiState.value
         var esValido = true
 
@@ -124,13 +109,18 @@ class AuthViewModel(
             _uiState.update { it.copy(errorAlias = "El alias es obligatorio") }
             esValido = false
         }
+        
+        // Validación de correo usando Regex estándar en lugar de Android Patterns para facilitar tests
+        val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$".toRegex()
+        
         if (s.correo.isBlank()) {
             _uiState.update { it.copy(errorCorreo = "El correo es obligatorio") }
             esValido = false
-        } else if (!Patterns.EMAIL_ADDRESS.matcher(s.correo).matches()) {
+        } else if (!emailRegex.matches(s.correo)) {
             _uiState.update { it.copy(errorCorreo = "Formato de correo inválido") }
             esValido = false
         }
+        
         if (s.clave.length < 6) {
             _uiState.update { it.copy(errorClave = "Mínimo 6 caracteres") }
             esValido = false

@@ -11,11 +11,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class CarteleraViewModel(
-    application: Application
+    application: Application,
+    private val repository: PeliculasRepository,
+    private val favoritosManager: FavoritosManager
 ) : AndroidViewModel(application) {
 
-    private val repository = PeliculasRepository()
-    private val favoritosManager = FavoritosManager(application.applicationContext)
+    // --- CONSTRUCTOR NECESARIO PARA LA APP ---
+    // Este es el que usa Android cuando llamas a viewModel() en la pantalla
+    constructor(application: Application) : this(
+        application, 
+        PeliculasRepository(), 
+        FavoritosManager(application.applicationContext)
+    )
 
     private val _estrenos = MutableStateFlow<List<Pelicula>>(emptyList())
     val estrenos: StateFlow<List<Pelicula>> = _estrenos
@@ -43,8 +50,6 @@ class CarteleraViewModel(
 
     init {
         cargarCartelera()
-        // No cargamos favoritos aquí porque necesitamos el ID del usuario.
-        // Se cargará desde la UI con LaunchedEffect.
     }
 
     fun cargarCartelera() {
@@ -94,7 +99,8 @@ class CarteleraViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val resultados = repository.buscarSeries(query)
+                // Usamos buscarContenido para obtener series Y películas
+                val resultados = repository.buscarContenido(query) // <--- CORREGIDO AQUI
                 _resultadosBusqueda.value = resultados
             } catch (e: Exception) {
                 e.printStackTrace()

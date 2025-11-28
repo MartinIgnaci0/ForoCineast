@@ -11,9 +11,8 @@ import retrofit2.http.*
  */
 interface ApiService {
 
-    // ==========================================
     //  USUARIOS (Autenticación)
-    // ==========================================
+
 
     /**
      * Iniciar Sesión.
@@ -30,9 +29,8 @@ interface ApiService {
     suspend fun registro(@Body usuario: Usuario): Usuario
 
 
-    // ==========================================
+
     //  FORO (Reseñas de Películas)
-    // ==========================================
 
     /**
      * Obtener todas las reseñas.

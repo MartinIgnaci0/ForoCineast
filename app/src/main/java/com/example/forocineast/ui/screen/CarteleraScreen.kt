@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat // <--- Import actualizado
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
@@ -97,7 +97,8 @@ fun CarteleraScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Buscar series...", color = Color.Gray) },
+                    // Placeholder actualizado
+                    placeholder = { Text("Buscar series y peliculas...", color = Color.Gray) },
                     leadingIcon = { 
                         Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) 
                     },
@@ -127,7 +128,6 @@ fun CarteleraScreen(
                 onClick = onNavigateToForo,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
-                // Usamos el icono AutoMirrored para evitar el warning
                 icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null) },
                 text = { Text("Ir al Foro") }
             )

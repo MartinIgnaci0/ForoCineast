@@ -44,4 +44,12 @@ interface ExternalApiService {
         @Query("language") idioma: String = "es-ES",
         @Query("page") pagina: Int = 1
     ): PeliculaResponse
+
+    // 6. BUSCAR PELICULAS (NUEVO)
+    @GET("search/movie")
+    suspend fun buscarPeliculas(
+        @Query("query") query: String,
+        @Query("language") idioma: String = "es-ES",
+        @Query("page") pagina: Int = 1
+    ): PeliculaResponse
 }

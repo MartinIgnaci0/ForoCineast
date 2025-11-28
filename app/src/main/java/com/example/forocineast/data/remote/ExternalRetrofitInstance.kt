@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object ExternalRetrofitInstance {
     private const val BASE_URL = "https://api.themoviedb.org/3/"
 
-    // TU API KEY (Corta, 32 caracteres)
+    // API KEY
     private const val API_KEY = "c3568d65b0fc1de2bee609a24087cabe"
 
     // Cliente HTTP que añade la API KEY como parámetro (?api_key=...) a todas las peticiones

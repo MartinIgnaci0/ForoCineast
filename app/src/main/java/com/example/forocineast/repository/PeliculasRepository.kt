@@ -3,6 +3,8 @@ package com.example.forocineast.repository
 import android.util.Log
 import com.example.forocineast.data.remote.ExternalRetrofitInstance
 import com.example.forocineast.model.Pelicula
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class PeliculasRepository {
 
@@ -38,10 +40,10 @@ class PeliculasRepository {
         return try {
             val respuesta = api.getPeliculasMejorValoradas()
             val lista = respuesta.resultados ?: emptyList()
-            Log.d("TMDB_REPO", "Pelis mejor valoradas: ${lista.size}")
+            Log.d("TMDB_REPO", "Peliculas mejor valoradas: ${lista.size}")
             lista
         } catch (e: Exception) {
-            Log.e("TMDB_REPO", "Error al obtener pelis top: ${e.message}")
+            Log.e("TMDB_REPO", "Error al obtener peliculas top: ${e.message}")
             emptyList()
         }
     }
@@ -58,16 +60,34 @@ class PeliculasRepository {
         }
     }
 
-    // --- NUEVA FUNCIÓN: BUSCAR SERIES ---
-    suspend fun buscarSeries(query: String): List<Pelicula> {
-        return try {
-            val respuesta = api.buscarSeries(query = query)
-            val lista = respuesta.resultados ?: emptyList()
-            Log.d("TMDB_REPO", "Resultados búsqueda '$query': ${lista.size}")
-            lista
-        } catch (e: Exception) {
-            Log.e("TMDB_REPO", "Error buscando series: ${e.message}")
-            emptyList()
+    // --- BÚSQUEDA MIXTA (CINE Y TV) ---
+    suspend fun buscarContenido(query: String): List<Pelicula> = coroutineScope {
+        // Lanzamos las dos peticiones en paralelo para que sea más rápido
+        val deferredSeries = async {
+            try {
+                api.buscarSeries(query = query).resultados ?: emptyList()
+            } catch (e: Exception) {
+                emptyList<Pelicula>()
+            }
         }
+        val deferredPeliculas = async {
+            try {
+                api.buscarPeliculas(query = query).resultados ?: emptyList()
+            } catch (e: Exception) {
+                emptyList<Pelicula>()
+            }
+        }
+
+        // Esperamos ambos resultados
+        val series = deferredSeries.await()
+        val peliculas = deferredPeliculas.await()
+
+        // Combinamos las listas
+        val combinados = (series + peliculas)
+            // Opcional: Ordenar por popularidad o relevancia para que lo mejor salga primero
+            .sortedByDescending { it.calificacionPromedio } 
+        
+        Log.d("TMDB_REPO", "Resultados búsqueda '$query': ${combinados.size} (S:${series.size} + P:${peliculas.size})")
+        combinados
     }
 }

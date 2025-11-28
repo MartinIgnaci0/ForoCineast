@@ -1,58 +1,77 @@
-ForoCineast: Módulo de Autenticación con Jetpack Compose
+ForoCineast - Plataforma de Discusion Cinematografica
 
-Este repositorio contiene el código fuente para el módulo de autenticación (Login y Registro) de la aplicación ForoCineast, un foro dedicado a la discusión cinematográfica.
+DESCRIPCION GENERAL
+ForoCineast es una aplicacion nativa de Android desarrollada en Kotlin utilizando Jetpack Compose. Su objetivo es ofrecer una plataforma donde los usuarios puedan explorar la cartelera actual de cine y television, gestionar sus favoritos y participar en un foro comunitario publicando resenas y calificaciones.
 
-La implementación está construida en Kotlin utilizando Jetpack Compose y sigue estrictamente el patrón de arquitectura MVVM (Model-View-ViewModel).
+La aplicacion consume datos de la API publica de TMDB (The Movie Database) para la informacion de peliculas y series, y utiliza un backend propio alojado en AWS (Node.js + MySQL) para la gestion de usuarios y el foro.
 
-Tecnologías y Patrones Clave:
+CARACTERISTICAS PRINCIPALES
 
-Lenguaje: Kotlin
-Framework UI: Jetpack Compose (Modern UI Toolkit para Android).
-Arquitectura: MVVM, asegurando una clara separación de la lógica de negocio y la interfaz de usuario.
-Manejo de Estado: Uso de StateFlow y MutableStateFlow de Kotlin Flow para exponer el estado de la UI de manera reactiva.
-Asincronía: Corrutinas de Kotlin (viewModelScope.launch) para simular las operaciones de red/base de datos sin bloquear el hilo principal.
-Capa de Datos: Implementación de un repositorio local (UsuarioRepository) para simular la persistencia de los datos de usuario en memoria.
+1. Autenticacion y Usuarios
+- Registro de usuarios con validacion de campos (correo, longitud de contrasena).
+- Inicio de sesion seguro contra base de datos remota (AWS).
+- Perfil de usuario persistente.
+- Gestion de Foto de Perfil: Permite tomar fotos con la camara o seleccionarlas de la galeria. Las imagenes se guardan localmente y persisten entre sesiones.
 
-Características del Módulo:
+2. Cartelera y Exploracion (API TMDB)
+- Visualizacion de cuatro categorias principales: Estrenos, Populares, Peliculas mejor valoradas y Series mejor valoradas.
+- Buscador Universal: Permite buscar tanto PELICULAS como SERIES de television en tiempo real, combinando resultados por relevancia.
+- Detalle de contenidos: Muestra sinopsis, calificacion, fecha de estreno y poster en alta resolucion.
 
-El enfoque principal del proyecto es la robustez y la experiencia de usuario en el flujo de inicio de sesión y registro:
+3. Sistema de Favoritos (Offline)
+- Los usuarios pueden marcar contenidos como favoritos pulsando el icono de corazon.
+- Persistencia Local: La lista se guarda en el dispositivo (SharedPreferences) y funciona sin internet.
+- Multi-usuario: Cada cuenta registrada tiene su propia lista de favoritos independiente.
 
-Validación de Formularios en Tiempo Real: Se aplican reglas de validación inmediatas para asegurar la calidad de los datos:
+4. Foro y Comunidad (Backend AWS)
+- Listado de resenas publicadas por la comunidad en tiempo real.
+- Publicacion de nuevas resenas con titulo, cuerpo, referencia a la pelicula, valoracion (estrellas) y alerta de Spoilers.
+- Sistema de Spoilers: El contenido sensible se oculta por defecto hasta que el usuario decide verlo.
+- Feedback Visual: Mensajes de error claros (Toast) y actualizaciones optimistas en la interfaz.
 
-Nombre: No puede estar vacío.
+5. Moderacion (Rol de Administrador)
+- Existe un rol de "Admin" (gestionado desde la base de datos) que puede eliminar cualquier publicacion del foro.
+- Los usuarios normales solo pueden eliminar sus propias publicaciones.
 
-Correo Electrónico: Debe tener un formato válido y ser único (en el caso de Registro).
+ARQUITECTURA Y TECNOLOGIAS
 
-Contraseña (Clave): Debe cumplir con una longitud mínima.
+- Lenguaje: Kotlin
+- Interfaz de Usuario: Jetpack Compose (Material Design 3)
+- Patron de Diseno: MVVM (Model-View-ViewModel)
+- Navegacion: Navigation Compose
+- Red y API: Retrofit 2 + Gson (Interceptor para Auth)
+- Carga de Imagenes: Coil
+- Asincronia: Kotlin Coroutines y StateFlow
+- Persistencia Local: SharedPreferences y FileProvider.
+- Calidad de Codigo (Testing): Suite de pruebas unitarias con JUnit 4 y Mockk cubriendo Modelos, ViewModels y Repositorios (~80% de cobertura).
 
-Edad: Requiere una edad mínima para el registro.
+CONFIGURACION PARA DESARROLLADORES
 
-Manejo de Errores Detallado: Los errores específicos de validación se muestran directamente bajo el campo afectado.
+Para compilar y ejecutar este proyecto, asegurate de cumplir con los siguientes requisitos:
 
-Flujo de Éxito/Fallo: La lógica de Login y Registro utiliza callbacks (onSuccess/onError) para gestionar la navegación o mostrar mensajes modales de error, simulando una respuesta de API.
+1. API Key de TMDB
+El archivo 'ExternalRetrofitInstance.kt' requiere una API Key valida.
+Ubicacion: data/remote/ExternalRetrofitInstance.kt
 
-Estructura de la Arquitectura:
+2. Conexion al Backend (AWS)
+La aplicacion se conecta a un servidor EC2. La IP debe estar actualizada en 'RetrofitInstance.kt'.
+Nota: Si el servidor AWS se reinicia, la IP Publica cambia y debe actualizarse en la App.
 
-El proyecto está organizado de acuerdo con el patrón MVVM:
+3. Base de Datos (MySQL)
+Backend Node.js corriendo con PM2 y base de datos 'forocineast_db'.
+Para modo Admin: UPDATE usuarios SET esAdmin = 1 WHERE correo = '...';
 
-UsuarioViewModel.kt (ViewModel): Contiene el estado (UsuarioUiState) y toda la lógica de negocio. Es el puente entre la Vista y el Repositorio.
+GUIA DE USO
 
-UsuarioRepository.kt (Modelo/Data): Simula la fuente de datos. Contiene los métodos login y registro, manejando la colección de usuarios en memoria.
+1. Intro: Al abrir la app, se mostrara una Splash Screen animada.
+2. Login/Registro: Crea una cuenta o entra con tus credenciales.
+3. Navegacion:
+   - Cartelera: Explora y busca contenidos. Usa el corazon para guardar.
+   - Foro: Comparte tus opiniones con la comunidad.
+   - Favoritos: Accede a tu coleccion personal.
+   - Perfil: Gestiona tu foto y sesion.
 
-UsuarioUiState.kt (Modelo/UI State): Data Class inmutable que define todos los datos de los campos de la UI y sus mensajes de error.
-
-LoginScreen.kt / RegistroScreen.kt (Vista): Las funciones @Composable que observan el UsuarioViewModel y dibujan la interfaz.
-
-Instrucciones de Uso
-
-Para compilar y ejecutar el proyecto en Android Studio:
-
-Clonar el Repositorio:
-
-https://github.com/MartinIgnaci0/ForoCineast
-
-Abrir Proyecto: Abrir Android Studio, seleccionar File -> Open y elegir la carpeta raíz de ForoCineast.
-
-Ejecutar: Sincronizar Gradle si es necesario, seleccionar un emulador o dispositivo y presionar el botón de Run.
-
-Desarrollado por Martin Pizarro.
+AUTORES
+Trabajo realizado por:
+- Martin Pizarro
+- Daniel Palma
