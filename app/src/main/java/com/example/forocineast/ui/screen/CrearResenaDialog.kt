@@ -26,7 +26,7 @@ fun CrearResenaDialog(
     var cuerpo by remember { mutableStateOf(postAEditar?.cuerpo ?: "") }
     var pelicula by remember { mutableStateOf(postAEditar?.peliculaRef ?: "") }
     var rating by remember { mutableStateOf(postAEditar?.valoracion ?: 3) }
-    var tieneSpoilers by remember { mutableStateOf(postAEditar?.tieneSpoilers ?: false) }
+    var tieneSpoilers by remember { mutableStateOf(postAEditar?.esSpoiler() ?: false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(

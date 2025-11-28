@@ -1,6 +1,5 @@
 package com.example.forocineast.ui.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,12 +22,18 @@ import com.example.forocineast.viewmodel.ForoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForoScreen() {
+fun ForoScreen(
+    authViewModel: AuthViewModel
+) {
     val foroViewModel: ForoViewModel = viewModel()
-    val authViewModel: AuthViewModel = viewModel()
 
     val posts by foroViewModel.posts.collectAsState()
     val isLoading by foroViewModel.isLoading.collectAsState()
+
+    // Obtenemos si el usuario actual es Admin
+    val usuarioActual = authViewModel.usuarioActual
+    val esAdmin = usuarioActual?.isAdmin() == true
+    val usuarioId = usuarioActual?.id ?: -1
 
     var mostrarDialogo by remember { mutableStateOf(false) }
 
@@ -56,8 +61,9 @@ fun ForoScreen() {
                     items(posts) { post ->
                         PostItem(
                             post = post,
-                            usuarioActualId = authViewModel.usuarioActual?.id ?: -1,
-                            onDelete = { foroViewModel.eliminarResena(post, authViewModel.usuarioActual?.id ?: -1) }
+                            usuarioActualId = usuarioId,
+                            esAdmin = esAdmin, // Pasamos el permiso
+                            onDelete = { foroViewModel.eliminarResena(post, usuarioId) }
                         )
                     }
                 }
@@ -65,7 +71,6 @@ fun ForoScreen() {
         }
 
         if (mostrarDialogo) {
-            // 👇 AQUÍ LLAMAMOS AL NUEVO NOMBRE
             CrearResenaDialog(
                 onDismiss = { mostrarDialogo = false },
                 onPublicar = { titulo, cuerpo, peli, rating, spoiler ->
@@ -75,8 +80,8 @@ fun ForoScreen() {
                         peliculaRef = peli,
                         valoracion = rating,
                         tieneSpoilers = spoiler,
-                        usuarioId = authViewModel.usuarioActual?.id ?: 0,
-                        usuarioAlias = authViewModel.usuarioActual?.alias ?: "Anónimo"
+                        usuarioId = usuarioId,
+                        usuarioAlias = usuarioActual?.alias ?: "Anónimo"
                     )
                 }
             )
@@ -85,8 +90,13 @@ fun ForoScreen() {
 }
 
 @Composable
-fun PostItem(post: Post, usuarioActualId: Int, onDelete: () -> Unit) {
-    var mostrarSpoiler by remember { mutableStateOf(!post.tieneSpoilers) }
+fun PostItem(
+    post: Post, 
+    usuarioActualId: Int, 
+    esAdmin: Boolean, // Nuevo parámetro
+    onDelete: () -> Unit
+) {
+    var mostrarSpoiler by remember { mutableStateOf(!post.esSpoiler()) }
 
     Card(elevation = CardDefaults.cardElevation(4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -138,15 +148,17 @@ fun PostItem(post: Post, usuarioActualId: Int, onDelete: () -> Unit) {
                 }
             }
 
-            // Botón de eliminar (Solo si soy el dueño)
-            if (post.autorId == usuarioActualId) {
+            // Botón de eliminar: Visible si soy el dueño O si soy ADMIN
+            if (post.autorId == usuarioActualId || esAdmin) {
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 TextButton(
                     onClick = onDelete,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                    // Diferenciamos visualmente si borramos como admin
+                    val textoBoton = if (post.autorId == usuarioActualId) "Eliminar" else "Eliminar (Admin)"
+                    Text(textoBoton, color = MaterialTheme.colorScheme.error)
                     Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                 }
             }

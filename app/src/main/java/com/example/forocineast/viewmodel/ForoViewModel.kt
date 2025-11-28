@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.forocineast.model.Post
 import com.example.forocineast.repository.PostRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -29,7 +30,10 @@ class ForoViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _posts.value = repository.obtenerResenas()
+                // Pequeña pausa artificial para asegurar que la BD remota actualizó (opcional pero útil)
+                // delay(300) 
+                val lista = repository.obtenerResenas()
+                _posts.value = lista
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -51,6 +55,9 @@ class ForoViewModel(
         usuarioAlias: String?
     ) {
         viewModelScope.launch {
+            // 1. Activamos la carga
+            _isLoading.value = true
+
             val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             val nuevoPost = Post(
@@ -58,17 +65,30 @@ class ForoViewModel(
                 cuerpo = cuerpo,
                 peliculaRef = peliculaRef,
                 valoracion = valoracion,
-                tieneSpoilers = tieneSpoilers,
+                tieneSpoilers = if (tieneSpoilers) 1 else 0,
                 fechaCreacion = fechaHoy,
                 autorId = usuarioId,
                 autorAlias = usuarioAlias
             )
 
             try {
-                repository.publicarResena(nuevoPost)
-                cargarResenas() // Recargamos la lista para ver el cambio
+                // 2. Enviamos al servidor
+                val postCreado = repository.publicarResena(nuevoPost)
+                
+                // 3. ACTUALIZACIÓN OPTIMISTA:
+                // En lugar de esperar a recargar todo, agregamos el post nuevo a la lista actual manualmente
+                // Esto hace que aparezca INSTANTANEAMENTE.
+                val listaActual = _posts.value.toMutableList()
+                
+                // Lo agregamos al principio de la lista (índice 0) para que salga arriba
+                listaActual.add(0, postCreado)
+                
+                _posts.value = listaActual
+
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -78,10 +98,16 @@ class ForoViewModel(
             try {
                 post.id?.let { idPost ->
                     repository.eliminarResena(idPost, usuarioIdActual)
-                    cargarResenas()
+                    
+                    // Actualización optimista para eliminar: Lo quitamos de la lista local
+                    val listaActual = _posts.value.toMutableList()
+                    listaActual.remove(post)
+                    _posts.value = listaActual
                 }
             } catch (e: Exception) {
                 println("Error al eliminar: ${e.message}")
+                // Si falla, recargamos por si acaso
+                cargarResenas()
             }
         }
     }

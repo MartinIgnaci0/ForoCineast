@@ -1,7 +1,6 @@
 package com.example.forocineast.ui.screen
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,16 +21,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.forocineast.navigation.NavEvent
 import com.example.forocineast.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onNavigateToRegistro: () -> Unit,
-    onNavigateToCartelera: () -> Unit
+    onNavigateToCartelera: () -> Unit,
+    viewModel: AuthViewModel // <--- Parámetro inyectado desde NavGraph
 ) {
-    val viewModel: AuthViewModel = viewModel()
+    // Usamos el viewModel compartido
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
@@ -111,7 +110,7 @@ fun LoginScreen(
                 onClick = {
                     viewModel.login(
                         onSuccess = {
-                            Toast.makeText(context, "¡Bienvenido a la función!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Registro Exitoso", Toast.LENGTH_SHORT).show()
                             onNavigateToCartelera()
                         }
                     )
@@ -133,7 +132,7 @@ fun LoginScreen(
 
             // Link Registro
             Text(
-                text = "¿No tienes entrada? Regístrate aquí",
+                text = "¿No tienes una cuenta? Regístrate aquí",
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { onNavigateToRegistro() }
             )

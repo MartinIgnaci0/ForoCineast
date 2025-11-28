@@ -19,9 +19,10 @@ import com.example.forocineast.viewmodel.AuthViewModel
 @Composable
 fun RegistroScreen(
     onBack: () -> Unit,
-    onRegistroExitoso: () -> Unit
+    onRegistroExitoso: () -> Unit,
+    viewModel: AuthViewModel // <--- PARAMETRO OBLIGATORIO
 ) {
-    val viewModel: AuthViewModel = viewModel()
+    // val viewModel: AuthViewModel = viewModel() // <--- ELIMINADO
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 

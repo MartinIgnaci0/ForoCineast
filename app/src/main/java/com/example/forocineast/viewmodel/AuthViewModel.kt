@@ -1,6 +1,10 @@
 package com.example.forocineast.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import android.util.Patterns
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.forocineast.model.AuthUiState
 import com.example.forocineast.model.Usuario
@@ -10,24 +14,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+// Cambiamos a AndroidViewModel para tener acceso al Contexto (necesario para SharedPreferences)
 class AuthViewModel(
-    private val repository: UsuarioRepository = UsuarioRepository()
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
 
-    // Estado del formulario (textos, errores, carga)
+    private val repository = UsuarioRepository()
+    private val context = application.applicationContext
+    
+    // Preferencias para guardar datos locales simples
+    private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+
+    // Estado del formulario
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    // Guardamos el usuario logueado en memoria
+    // Usuario actual
     var usuarioActual: Usuario? = null
         private set
-
-    // --- Actualizadores de campos (se llaman desde la UI) ---
-    fun onNombreChange(texto: String) = _uiState.update { it.copy(nombre = texto, errorNombre = null) }
-    fun onAliasChange(texto: String) = _uiState.update { it.copy(alias = texto, errorAlias = null) }
-    fun onCorreoChange(texto: String) = _uiState.update { it.copy(correo = texto, errorCorreo = null) }
-    fun onClaveChange(texto: String) = _uiState.update { it.copy(clave = texto, errorClave = null) }
-    fun onConfirmarClaveChange(texto: String) = _uiState.update { it.copy(confirmarClave = texto) }
 
     // --- Lógica de Login ---
     fun login(onSuccess: () -> Unit) {
@@ -37,10 +41,20 @@ class AuthViewModel(
                 val correo = _uiState.value.correo
                 val clave = _uiState.value.clave
 
-                // Llamada al repositorio
+                // 1. Login en el servidor
                 val usuarioRecibido = repository.login(correo, clave)
 
-                usuarioActual = usuarioRecibido
+                // 2. Recuperar foto guardada localmente si existe
+                val fotoGuardada = prefs.getString("foto_perfil_${usuarioRecibido.id}", null)
+                
+                // Si hay foto local, la usamos. Si no, usamos la que venga del servidor (si hubiera)
+                val usuarioConFoto = if (fotoGuardada != null) {
+                    usuarioRecibido.copy(fotoPerfilUrl = fotoGuardada)
+                } else {
+                    usuarioRecibido
+                }
+
+                usuarioActual = usuarioConFoto
                 _uiState.update { it.copy(estaCargando = false) }
                 onSuccess()
 
@@ -54,6 +68,27 @@ class AuthViewModel(
             }
         }
     }
+
+    // --- Actualizar foto de perfil (Persistente) ---
+    fun actualizarFotoPerfil(uri: Uri) {
+        val idUsuario = usuarioActual?.id ?: return
+        val rutaFoto = uri.toString()
+
+        // 1. Actualizar en memoria (para que se vea ya)
+        usuarioActual = usuarioActual?.copy(fotoPerfilUrl = rutaFoto)
+
+        // 2. Guardar en disco (SharedPreferences) para el futuro
+        prefs.edit().putString("foto_perfil_$idUsuario", rutaFoto).apply()
+        
+        // Forzamos recomposición si es necesario (aunque usuarioActual no es flow, la pantalla lo relee)
+    }
+
+    // --- Actualizadores de campos ---
+    fun onNombreChange(texto: String) = _uiState.update { it.copy(nombre = texto, errorNombre = null) }
+    fun onAliasChange(texto: String) = _uiState.update { it.copy(alias = texto, errorAlias = null) }
+    fun onCorreoChange(texto: String) = _uiState.update { it.copy(correo = texto, errorCorreo = null) }
+    fun onClaveChange(texto: String) = _uiState.update { it.copy(clave = texto, errorClave = null) }
+    fun onConfirmarClaveChange(texto: String) = _uiState.update { it.copy(confirmarClave = texto) }
 
     // --- Lógica de Registro ---
     fun registrar(onSuccess: () -> Unit) {
@@ -77,7 +112,6 @@ class AuthViewModel(
         }
     }
 
-    // Validaciones locales antes de enviar
     private fun validarRegistro(): Boolean {
         val s = _uiState.value
         var esValido = true
@@ -92,6 +126,9 @@ class AuthViewModel(
         }
         if (s.correo.isBlank()) {
             _uiState.update { it.copy(errorCorreo = "El correo es obligatorio") }
+            esValido = false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(s.correo).matches()) {
+            _uiState.update { it.copy(errorCorreo = "Formato de correo inválido") }
             esValido = false
         }
         if (s.clave.length < 6) {

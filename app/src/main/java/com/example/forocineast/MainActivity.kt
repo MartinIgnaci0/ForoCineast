@@ -15,14 +15,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Aplicamos el tema de cine (Rojo/Oscuro)
+            // Tema (Rojo/Oscuro)
             ForoCineastTheme {
                 // Contenedor principal
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Creamos el controlador de navegación y lanzamos el Grafo
+                    // controlador de navegación y lanzamos el Grafo
                     val navController = rememberNavController()
                     AppNavGraph(navController = navController)
                 }
