@@ -21,10 +21,6 @@ class PeliculasRepositoryTest {
 
     @Before
     fun setup() {
-        // YA NO MOCKEAMOS Log AQUÍ. 
-        // 'unitTests.isReturnDefaultValues = true' en build.gradle se encarga de ello.
-
-        // Mockeamos el Singleton de Retrofit
         api = mockk()
         mockkObject(ExternalRetrofitInstance)
         coEvery { ExternalRetrofitInstance.api } returns api
@@ -51,7 +47,6 @@ class PeliculasRepositoryTest {
 
     @Test
     fun `obtenerCartelera devuelve vacio si api falla`() = runTest {
-        // Simulamos error
         coEvery { api.getPopulares() } throws RuntimeException("Error de red")
 
         val resultado = repository.obtenerCartelera()
@@ -70,15 +65,26 @@ class PeliculasRepositoryTest {
     }
 
     @Test
-    fun `buscarSeries llama al endpoint correcto`() = runTest {
-        val lista = listOf(Pelicula(3, "Breaking Bad"))
-        val response = PeliculaResponse(lista)
-        val query = "Breaking"
+    fun `buscarContenido llama a endpoints y combina resultados`() = runTest {
+        // Simulamos datos de series y películas usando argumentos nombrados para mayor claridad
+        // CORREGIDO: Usamos solo argumentos nombrados para evitar pasar 'title' dos veces
+        val serie = Pelicula(idRemote = 3, name = "Serie Test")
+        val peli = Pelicula(idRemote = 4, title = "Peli Test")
         
-        coEvery { api.buscarSeries(query = query) } returns response
+        val responseSeries = PeliculaResponse(listOf(serie))
+        val responsePelis = PeliculaResponse(listOf(peli))
+        
+        val query = "Test"
+        
+        // Mockeamos AMBAS llamadas
+        coEvery { api.buscarSeries(query = query) } returns responseSeries
+        coEvery { api.buscarPeliculas(query = query) } returns responsePelis
 
-        val resultado = repository.buscarSeries(query)
-        assertEquals(lista, resultado)
+        // Ejecutamos la búsqueda mixta
+        val resultado = repository.buscarContenido(query)
+        
+        // Verificamos que estén ambos en la lista resultante
+        assertEquals(2, resultado.size)
     }
 
     @Test

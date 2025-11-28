@@ -18,8 +18,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // --- CONFIGURACIÓN DE FIRMA AUTOMÁTICA ---
+    signingConfigs {
+        create("release") {
+            // PASO 1: Copia tu archivo .jks a la carpeta 'app' del proyecto
+            // PASO 2: Escribe aquí el nombre exacto del archivo y tus contraseñas
+            storeFile = file("tu_archivo_llave.jks")
+            storePassword = "tu_password_store"
+            keyAlias = "tu_alias_key"
+            keyPassword = "tu_password_key"
+        }
+    }
+
     buildTypes {
         release {
+            // Esto aplica la firma automáticamente al compilar en release
+            signingConfig = signingConfigs.getByName("release")
+            
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

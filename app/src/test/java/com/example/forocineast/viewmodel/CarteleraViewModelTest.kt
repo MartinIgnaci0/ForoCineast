@@ -58,7 +58,12 @@ class CarteleraViewModelTest {
         coEvery { repository.obtenerPeliculasMejorValoradas() } returns emptyList()
         coEvery { repository.obtenerSeriesMejorValoradas() } returns emptyList()
 
-        viewModel = CarteleraViewModel(application, repository, favoritosManager)
+        // Usamos argumentos nombrados para evitar errores de "Argument already passed"
+        viewModel = CarteleraViewModel(
+            application = application,
+            repository = repository,
+            favoritosManager = favoritosManager
+        )
     }
 
     @After
@@ -85,7 +90,7 @@ class CarteleraViewModelTest {
     @Test
     fun `buscar actualiza resultadosBusqueda`() = runTest {
         val resultado = Pelicula(3, "Búsqueda")
-        coEvery { repository.buscarSeries("query") } returns listOf(resultado)
+        coEvery { repository.buscarContenido("query") } returns listOf(resultado)
 
         viewModel.buscar("query")
         assertTrue(viewModel.busquedaActiva.value)
@@ -116,21 +121,18 @@ class CarteleraViewModelTest {
 
     @Test
     fun `obtenerPeliculaPorId encuentra la pelicula en cualquier lista`() = runTest {
-        // DADOS: Diferentes películas en diferentes listas
         val peliEstreno = Pelicula(10, "Estreno")
         val peliPopular = Pelicula(20, "Popular")
         val peliBusqueda = Pelicula(30, "Buscada")
 
-        // Configuramos el ViewModel con estas listas (simulando carga)
         coEvery { repository.obtenerEstrenos() } returns listOf(peliEstreno)
         coEvery { repository.obtenerCartelera() } returns listOf(peliPopular)
-        coEvery { repository.buscarSeries("query") } returns listOf(peliBusqueda)
+        coEvery { repository.buscarContenido("query") } returns listOf(peliBusqueda)
 
         viewModel.cargarCartelera()
         viewModel.buscar("query")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // CUANDO / ENTONCES
         val encontrada1 = viewModel.obtenerPeliculaPorId(10)
         assertNotNull("Debería encontrar en estrenos", encontrada1)
         assertEquals("Estreno", encontrada1?.titulo)

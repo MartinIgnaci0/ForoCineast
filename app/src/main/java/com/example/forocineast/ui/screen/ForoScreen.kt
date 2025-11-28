@@ -39,15 +39,19 @@ fun ForoScreen(
     val esAdmin = usuarioActual?.isAdmin() == true
     val usuarioId = usuarioActual?.id ?: -1
 
+    // Estado para controlar qué post se quiere eliminar (para mostrar el diálogo)
+    var postParaEliminar by remember { mutableStateOf<Post?>(null) }
+
+    // Estado para el diálogo de creación
+    var mostrarDialogoCrear by remember { mutableStateOf(false) }
+
     // Efecto para mostrar errores (Toast)
     LaunchedEffect(mensajeError) {
         mensajeError?.let { error ->
             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-            foroViewModel.limpiarError() // Limpiamos el error para no repetirlo
+            foroViewModel.limpiarError()
         }
     }
-
-    var mostrarDialogo by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -55,7 +59,7 @@ fun ForoScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { mostrarDialogo = true },
+                onClick = { mostrarDialogoCrear = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nueva Reseña")
@@ -74,17 +78,19 @@ fun ForoScreen(
                         PostItem(
                             post = post,
                             usuarioActualId = usuarioId,
-                            esAdmin = esAdmin, // Pasamos el permiso
-                            onDelete = { foroViewModel.eliminarResena(post, usuarioId) }
+                            esAdmin = esAdmin,
+                            // Al pulsar eliminar, NO borramos directo. Guardamos el post y el diálogo se abrirá.
+                            onDelete = { postParaEliminar = post }
                         )
                     }
                 }
             }
         }
 
-        if (mostrarDialogo) {
+        // --- DIÁLOGO DE CREACIÓN ---
+        if (mostrarDialogoCrear) {
             CrearResenaDialog(
-                onDismiss = { mostrarDialogo = false },
+                onDismiss = { mostrarDialogoCrear = false },
                 onPublicar = { titulo, cuerpo, peli, rating, spoiler ->
                     foroViewModel.publicarResena(
                         titulo = titulo,
@@ -95,6 +101,36 @@ fun ForoScreen(
                         usuarioId = usuarioId,
                         usuarioAlias = usuarioActual?.alias ?: "Anónimo"
                     )
+                }
+            )
+        }
+
+        // --- DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN ---
+        if (postParaEliminar != null) {
+            AlertDialog(
+                onDismissRequest = { postParaEliminar = null },
+                title = { Text("Eliminar Reseña") },
+                text = { 
+                    Text("¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.") 
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            // Confirmado: Llamamos al ViewModel
+                            postParaEliminar?.let { post ->
+                                foroViewModel.eliminarResena(post, usuarioId)
+                            }
+                            postParaEliminar = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Eliminar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { postParaEliminar = null }) {
+                        Text("Cancelar")
+                    }
                 }
             )
         }

@@ -16,8 +16,8 @@ class CarteleraViewModel(
     private val favoritosManager: FavoritosManager
 ) : AndroidViewModel(application) {
 
-    // --- CONSTRUCTOR NECESARIO PARA LA APP ---
-    // Este es el que usa Android cuando llamas a viewModel() en la pantalla
+    // --- CONSTRUCTOR EXPLÍCITO PARA ANDROID ---
+    // Esto evita el crash al iniciar la app
     constructor(application: Application) : this(
         application, 
         PeliculasRepository(), 
@@ -99,8 +99,7 @@ class CarteleraViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Usamos buscarContenido para obtener series Y películas
-                val resultados = repository.buscarContenido(query) // <--- CORREGIDO AQUI
+                val resultados = repository.buscarContenido(query)
                 _resultadosBusqueda.value = resultados
             } catch (e: Exception) {
                 e.printStackTrace()
