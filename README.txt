@@ -33,7 +33,7 @@ CARACTERISTICAS PRINCIPALES
 - Existe un rol de "Admin" (gestionado desde la base de datos) que puede eliminar cualquier publicacion del foro.
 - Los usuarios normales solo pueden eliminar sus propias publicaciones.
 
-ARQUITECTURA Y TECNOLOGIAS
+ARQUITECTURA Y TECNOLOGIAS.
 
 - Lenguaje: Kotlin
 - Interfaz de Usuario: Jetpack Compose (Material Design 3)
@@ -66,7 +66,7 @@ GUIA DE USO
 1. Intro: Al abrir la app, se mostrara una Splash Screen animada.
 2. Login/Registro: Crear una cuenta o ingresar con tus credenciales a la app.
 3. Navegacion:
-   - Cartelera: Explora y busca contenidos. Usa el corazon para guardar tud favoritos.
+   - Cartelera: Explora y busca contenidos. Usa el corazon para guardar tus favoritos.
    - Foro: Comparte tus opiniones con la comunidad.
    - Favoritos: Accede a tu coleccion personal.
    - Perfil: Gestiona tu foto y sesion.
