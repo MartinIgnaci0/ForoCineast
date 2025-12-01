@@ -64,9 +64,9 @@ Para modo Admin: UPDATE usuarios SET esAdmin = 1 WHERE correo = '...';
 GUIA DE USO
 
 1. Intro: Al abrir la app, se mostrara una Splash Screen animada.
-2. Login/Registro: Crea una cuenta o entra con tus credenciales.
+2. Login/Registro: Crear una cuenta o ingresar con tus credenciales a la app.
 3. Navegacion:
-   - Cartelera: Explora y busca contenidos. Usa el corazon para guardar.
+   - Cartelera: Explora y busca contenidos. Usa el corazon para guardar tud favoritos.
    - Foro: Comparte tus opiniones con la comunidad.
    - Favoritos: Accede a tu coleccion personal.
    - Perfil: Gestiona tu foto y sesion.
